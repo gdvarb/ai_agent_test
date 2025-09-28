@@ -18,7 +18,6 @@ def main():
         response = client.models.generate_content(model="gemini-2.0-flash-001", contents=messages)
         try:
             if sys.argv[2] and sys.argv[2] == "--verbose":
-                #print("entered try block")
                 print(f"User prompt: {user_prompt} \n Response: {response.text} \n Prompt tokens: {response.usage_metadata.prompt_token_count} \n Response tokens: {response.usage_metadata.candidates_token_count}") 
         except:
             print(response.text)
