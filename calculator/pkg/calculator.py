@@ -10,7 +10,7 @@ class Calculator:
         self.precedence = {
             "+": 1,
             "-": 1,
-            "-": 2,
+            "*": 2,
             "/": 2,
         }
 
@@ -18,7 +18,7 @@ class Calculator:
         if not expression or expression.isspace():
             return None
         tokens = expression.strip().split()
-        return self.__evaluate_infix(tokens)
+        return self._evaluate_infix(tokens)
     
     def _evaluate_infix(self, tokens):
         values = []
@@ -31,13 +31,13 @@ class Calculator:
                     and operators[-1] in self.operators
                     and self.precedence[operators[-1]] >= self.precedence[token]
                 ):
-                    self.apply_operator(operators, values)
+                    self._apply_operator(operators, values)
                 operators.append(token)
             else:
                 try:
                     values.append(float(token))
                 except ValueError:
-                    raise ValueError(f"invalid token:" {token})
+                    raise ValueError(f"invalid token: {token}")
 
         while operators:
             self._apply_operator(operators, values)
