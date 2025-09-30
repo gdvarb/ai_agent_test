@@ -13,7 +13,7 @@ def main():
     expression = " ".join(sys.argv[1:])
     try:
         result = calculator.evaluate(expression)
-        if result in not None:
+        if result is not None:
             to_print = format_json_output(expression, result)
             print(to_print)
         else:
