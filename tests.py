@@ -1,7 +1,5 @@
 #todo make tests for get_files_info.py
-from functions.get_files_info import get_files_info
-from functions.get_file_content import get_file_content
-
+from functions.tools import *
 #print("Results for current directory:")
 #get_files_info("calculator", ".")
 #
@@ -14,11 +12,22 @@ from functions.get_file_content import get_file_content
 #print("Results for '../' directory")
 #get_files_info("calculator", "../")
 
-print("Results for main.py")
-get_file_content("calculator", 'main.py')
-print("Results for pkg/calculator.py")
-get_file_content("calculator", 'pkg/calculator.py')
-print("Results for /bin/cat")
-get_file_content("calculator", '/bin/cat')
-print("Results for pkg/does_not_exist.py")
-get_file_content("calculator", 'pkg/does_not_exist.py')
+#print("Results for main.py")
+#get_file_content("calculator", 'main.py')
+#print("Results for pkg/calculator.py")
+#get_file_content("calculator", 'pkg/calculator.py')
+#print("Results for /bin/cat")
+#get_file_content("calculator", '/bin/cat')
+#print("Results for pkg/does_not_exist.py")
+#get_file_content("calculator", 'pkg/does_not_exist.py')
+
+
+print("Results for write calculator, lorem.txt")
+write_file("calculator", "lorem.txt", "wait, this isn't lorem ipsum")
+print("Results for write calculator/pkg/morelorem.txt")
+write_file("calculator", "pkg/morelorem.txt", "lorem ipsum dolor sit amet")
+print("Results for write calculator/tmp/temp.txt")
+write_file("calculator", "/tmp/temp.txt", "this should not be allowed")
+
+
+
