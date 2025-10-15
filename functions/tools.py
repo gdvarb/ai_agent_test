@@ -12,7 +12,7 @@ schema_get_files_info = types.FunctionDeclaration(
         properties={
             "directory": types.Schema(
                 type=types.Type.STRING,
-                description="The directory to list files from, relative to the working directory. If not provided, lists files in the working directory itself."
+                description="The directory to list files from, relative to the working directory. If not provided, lists files in the working directory itself.",
             ),
         },
     ),
@@ -32,16 +32,18 @@ def get_file_content(working_directory, file_path):
     if not os.path.isfile(full_path):
         print(f'Error: File not found or is not a regular file: "{file_path}"')
         return f'Error: File not found or is not a regular file: "{file_path}"'
-
-    with open(full_path, "r") as f:
-        file_content_string = f.read()
-        if len(file_content_string) > MAX_CHARS:
-            f.seek(0)
-            file_content_string = f.read(MAX_CHARS)
-            print(f'File Content:\n{file_content_string} \n[... File "{file_path} truncated to 10000 characters"]')
-        else:
-            print(file_content_string)
-            return f"File Content:\n{file_content_string}"
+    try:
+        with open(full_path, "r") as f:
+            file_content_string = f.read()
+            if len(file_content_string) > MAX_CHARS:
+                f.seek(0)
+                file_content_string = f.read(MAX_CHARS)
+                print(f'File Content:\n{file_content_string} \n[... File "{file_path} truncated to 10000 characters"]')
+            else:
+                print(file_content_string)
+                return f"File Content:\n{file_content_string}"
+    except Exception as e:
+        return f'Error reading file "{file_path}": {e}'
 
 def get_files_info(working_directory, directory="."):
     working_absolute_path = os.path.abspath(working_directory)
@@ -54,20 +56,22 @@ def get_files_info(working_directory, directory="."):
     if not full_path.startswith(working_absolute_path):
         print(f'Error: Cannot list "{directory}" as it is outside the permitted working directory')
         return f'Error: Cannot list "{directory}" as it is outside the permitted working directory'
-    else:
-        files =os.listdir(full_path)
-        file_string = ""
-        for file in files:
-            if file.startswith("."):
-                continue
-            file_path = full_path + f"/{file}"
-            try:
-                file_string = file_string + f'- {file}: file_size={os.path.getsize(file_path)}, is_dir={os.path.isdir(file_path)}\n'
-            except Exception as e:
-                print(f"An error occured: {e}")
-                return f"Error: {e}"
-        print(file_string)
-        return file_string
+    
+    try:    
+        files_info = []
+        for filename in os.listdir(full_path):
+            filepath = os.path.join(full_path, filename)
+            file_size = 0
+            is_dir = os.path.isdir(filepath)
+            file_size = os.path.getsize(filepath)
+            files_info.append(
+                f"- {filename}: file_size={file_size} bytes, is_dir={is_dir}"
+            )
+        print("\n".join(files_info))
+        return "\n".join(files_info)    
+    except Exception as e:
+        print(f"An error occured: {e}")
+        return f"Error listing files: {e}"
 
 def write_file(working_directory, file_path, content):
     working_absolute_path = os.path.abspath(working_directory)
