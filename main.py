@@ -3,9 +3,9 @@ import sys
 from google import genai
 from google.genai import types
 from dotenv import load_dotenv
+from functions.tools import call_function
 from system_prompt import system_prompt
 from call_function import available_functions
-
 
 
 def main():
@@ -55,6 +55,13 @@ def generate_content(client, messages, verbose):
 
     for function_call_part in response.function_calls:
         print(f"Calling function: {function_call_part.name}({function_call_part.args})")
+        call_results = call_function(function_call_part)
+        if not call_results.parts[0].function_response.response:
+            raise ValueError("Function response does not contain required field.")
+        elif call_results.parts[0].function_response.response and verbose:
+            print(f"-> {call_results.parts[0].function_response.response}")
+
+
 
 
 if __name__ == "__main__":
