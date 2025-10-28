@@ -34,8 +34,22 @@ def main():
     messages = [
         types.Content(role="user", parts=[types.Part(text=user_prompt)]),
     ]
+    i = 0
+    max_iters = 20
+    while True: 
+        i += 1
+        if i > max_iters:
+            print(f'Maximum iterations ({max_iters}) reached.')
+            sys.exit(1)
 
-    generate_content(client, messages, verbose)
+        try:
+            final_response = generate_content(client, messages, verbose)
+            if final_response:
+                print(f'Final response: {final_response}')
+                break
+        except Exception as e:
+            return f"An error occured: {e}"
+
 
 
 def generate_content(client, messages, verbose):
@@ -50,18 +64,34 @@ def generate_content(client, messages, verbose):
         print("Prompt tokens:", response.usage_metadata.prompt_token_count)
         print("Response tokens:", response.usage_metadata.candidates_token_count)
 
+    if response.candidates:
+        for candidate in response.candidates:
+            function_call_content = candidate.content
+            messages.append(function_call_content)
+
+
     if not response.function_calls:
         return response.text
 
+    function_responses = []
+
     for function_call_part in response.function_calls:
         print(f"Calling function: {function_call_part.name}({function_call_part.args})")
-        call_results = call_function(function_call_part)
-        if not call_results.parts[0].function_response.response:
-            raise ValueError("Function response does not contain required field.")
-        elif call_results.parts[0].function_response.response and verbose:
-            print(f"-> {call_results.parts[0].function_response.response}")
+        function_call_result = call_function(function_call_part, verbose)
+        if (
+            not function_call_result.parts
+            or not function_call_result.parts[0].function_response
+        ):
+            raise Exception("empty function call results")
 
+        if verbose:
+            print(f"-> {function_call_result.parts[0].function_response.response}")
+        function_responses.append(function_call_result.parts[0])
 
+    if not function_responses:
+        raise Exception("no function reponses generated, exiting.")
+
+    messages.append(types.Content(role="user", parts=function_responses))
 
 
 if __name__ == "__main__":
