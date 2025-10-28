@@ -4,17 +4,18 @@ import subprocess
 from google import genai
 from google.genai import types
 
-schema_get_files_info = types.FunctionDeclaration(
-    name="get_files_info",
-    description="Lists files in the specified directory along with their sizes, constrained to the working directory.",
+schema_get_file_content= types.FunctionDeclaration(
+    name="get_file_content",
+    description="Reads the contents of a specified file, constrained to the working directory.",
     parameters=types.Schema(
         type=types.Type.OBJECT,
         properties={
-            "directory": types.Schema(
+            "file_path": types.Schema(
                 type=types.Type.STRING,
-                description="The directory to list files from, relative to the working directory. If not provided, lists files in the working directory itself.",
+                description="The file path to the file to read, relative to the working directory.",
             ),
         },
+        required=["file_path"]
     ),
 )
 
@@ -45,6 +46,20 @@ def get_file_content(working_directory, file_path):
     except Exception as e:
         return f'Error reading file "{file_path}": {e}'
 
+schema_get_files_info = types.FunctionDeclaration(
+    name="get_files_info",
+    description="Lists files in the specified directory along with their sizes, constrained to the working directory.",
+    parameters=types.Schema(
+        type=types.Type.OBJECT,
+        properties={
+            "directory": types.Schema(
+                type=types.Type.STRING,
+                description="The directory to list files from, relative to the working directory. If not provided, lists files in the working directory itself.",
+            ),
+        },
+    ),
+)
+
 def get_files_info(working_directory, directory="."):
     working_absolute_path = os.path.abspath(working_directory)
     full_path = os.path.abspath(os.path.join(working_absolute_path, directory))
@@ -73,6 +88,26 @@ def get_files_info(working_directory, directory="."):
         print(f"An error occured: {e}")
         return f"Error listing files: {e}"
 
+schema_write_file= types.FunctionDeclaration(
+    name="write_file",
+    description="Writes to a file to the specified directory, constrained to the working directory.",
+    parameters=types.Schema(
+        type=types.Type.OBJECT,
+        properties={
+            "content": types.Schema(
+                type=types.Type.STRING,
+                description="What should be written to the file.",
+            ),
+            "file_path": types.Schema(
+                type=types.Type.STRING,
+                description="Path to file to be written to relative to the working directory. If file does not exist it will be created. Constrained to working directory"
+
+            )
+        },
+        required=["file_path", "content"]
+    ),
+)
+
 def write_file(working_directory, file_path, content):
     working_absolute_path = os.path.abspath(working_directory)
     full_path = os.path.abspath(os.path.join(working_directory, file_path))
@@ -80,25 +115,50 @@ def write_file(working_directory, file_path, content):
     if not full_path.startswith(working_absolute_path):
         print(f'Error: Cannot write to "{file_path}" as it is outside of the permitted working directory')
         return f'Error: Cannot write to "{file_path}" as it is outside of the permitted working directory'
+    
+    if not os.path.exists(full_path):
+        try:
+            os.makedirs(os.path.dirname(full_path), exist_ok=True)
+        except Exception as e:
+            print(f"Error: creating directory: {e}")
+            return f"Error: creating directory: {e}"
 
-    dirname = os.path.dirname(full_path)
-    #print(f'Directory name is: {dirname}')
-
-    if not os.path.exists(dirname):
-        os.makedirs(dirname)
-        #print(f'Made directory: {dirname}')
+    if os.path.exists(full_path) and os.path.isdir(full_path):
+        print(f"Error: '{file_path}' is a directory, not a file")
+        return f"Error: '{file_path}' is a directory, not a file"
 
     try:
-        with open(full_path, 'w') as f:
-            f.write(content + '\n')
-            #print(f'Successfully wrote to "{file_path}" ({len(content)} characters writen)')
-            print(f"'{len(content)} characters written'")
-            return f"'{len(content)} characters written'"
+        with open(full_path, "w") as f:
+            f.write(content)
+        return f'Successfully wrote to "{file_path}" ({len(content)} characters written)'
     except Exception as e:
-        print(f"'Error:'")
-        return f"'An error occured: {e}'"
+        return f"Error: writing to file: {e}"
+
 
     
+schema_run_python_file= types.FunctionDeclaration(
+    name="run_python_file",
+    description="Executes python file",
+    parameters=types.Schema(
+        type=types.Type.OBJECT,
+        properties={
+            "args": types.Schema(
+                type=types.Type.ARRAY,
+                items=types.Schema(
+                    type=types.Type.STRING,
+                    description="Parameter value"
+                ),
+                description="Array of parameters that should be passed to the function. Defaults to empty list.",
+            ),
+            "file_path": types.Schema(
+                type=types.Type.STRING,
+                description="Path to file to be executed. Constrained to working directory"
+            )
+        },
+        required=["file_path"]
+    ),
+)   
+
 def run_python_file(working_directory, file_path, args=[]):
     working_absolute_path = os.path.abspath(working_directory)
     full_path = os.path.abspath(os.path.join(working_directory, file_path))
